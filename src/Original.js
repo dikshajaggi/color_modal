@@ -119,12 +119,20 @@ const Original = () => {
       const [selectedPalette, setSelectedPalette] = useState(combinedPalettes[0])
       const [continuous, setContinuous] = useState(false)
       const [mappedVal, setMappedVal] = useState(updatedData.mapping)
+      const [dropdownOp, setDropdownOP] = useState([])
   
     
       const paletteOptions = combinedPalettes.map((palette) => ({
         value: palette,
         label: palette.paletteName
       }));
+
+      function getValues(array1, array2) {
+      const updatedDataVal = array1.map(item => Object.values(item))
+      const splicedVal = array2.map(item => Object.values(item))
+      const dropdownOp = _.difference(updatedDataVal.flat(2), splicedVal.flat(2))
+      setDropdownOP(dropdownOp)
+      }
     
       const handleChangeIconColor = (value) => {
         const objectIndexToUpdate = data.findIndex(obj => obj.iconColorSetBy === value.value)
@@ -153,6 +161,7 @@ const Original = () => {
         if (palette.length <= 8) {
           splicedArray.splice(palette.length)
           setMappedVal(splicedArray)
+          getValues(updatedData.mapping, splicedArray)
         }else {
           setMappedVal(updatedMapping)
         }
@@ -208,6 +217,11 @@ const Original = () => {
             ></div>
             <Select
             className='selectbox-legend'
+              options={dropdownOp.length !== 0 ? dropdownOp.map(legend => {
+                if (legend === null  || legend === undefined) return ""
+                return ({ value: legend, label: legend })
+              }) :  []
+              }
               value = {Object.values(item).map(legend => legend.map(val =>({value: val, label: val})))[0]}
               isMulti
               onChange={(selectedOption, e) => {handleChange(selectedOption, e)}}
