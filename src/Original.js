@@ -5,6 +5,16 @@ import _ from "lodash";
 import data from "./colordata.json"
 
 const Original = () => {
+  const bluePaletteEight = [
+    "#F0F8FF",
+    "#B0E0E6",
+    "#87CEEB",
+    "#87CEFA",
+    "#B0C4DE",
+    "#89CFF0",
+    "#6495ED",
+    "#0000CD"
+  ];
     const bluePalette = [
         "#F0F8FF",
         "#B0E0E6",
@@ -85,7 +95,8 @@ const Original = () => {
         { paletteName: "Blue", colors: bluePalette },
         { paletteName: "Red", colors: redShadesHexCodes },
         { paletteName: "Green", colors: greenShadesHexCodes },
-        { paletteName: "Yellow", colors: yellowPalette }
+        { paletteName: "Yellow", colors: yellowPalette },
+        { paletteName: "BlueEight", colors: bluePaletteEight }
       ];
     
       const colorOptions = [
@@ -107,6 +118,7 @@ const Original = () => {
       const [updatedData, setUpdatedData] = useState(data[objectIndexToUpdate])
       const [selectedPalette, setSelectedPalette] = useState(combinedPalettes[0])
       const [continuous, setContinuous] = useState(false)
+      const [mappedVal, setMappedVal] = useState(updatedData.mapping)
   
     
       const paletteOptions = combinedPalettes.map((palette) => ({
@@ -117,6 +129,7 @@ const Original = () => {
       const handleChangeIconColor = (value) => {
         const objectIndexToUpdate = data.findIndex(obj => obj.iconColorSetBy === value.value)
         setUpdatedData(data[objectIndexToUpdate])
+        setMappedVal(data[objectIndexToUpdate].mapping)
         data[objectIndexToUpdate].mapping.map(item => Object.values(item).map(legend => console.log(legend, "speed values")))
         const result = continuousValues.filter(item => item === data[objectIndexToUpdate].iconColorSetBy)
         result.length === 0 ? setContinuous(false) : setContinuous(true)
@@ -136,8 +149,13 @@ const Original = () => {
           }
           return newItem
         })
-      
-        updatedData.mapping = updatedMapping
+        const splicedArray = [...updatedMapping]
+        if (palette.length <= 8) {
+          splicedArray.splice(palette.length)
+          setMappedVal(splicedArray)
+        }else {
+          setMappedVal(updatedMapping)
+        }
       }
     
       const formatOptionLabel = ({ value }) => (
@@ -177,7 +195,7 @@ const Original = () => {
             />
             <div>
               {console.log(continuous, "working continuous")}
-            {continuous === false ? updatedData.mapping.map((item, index) => (
+            {continuous === false ? mappedVal.map((item, index) => (
             <div key={index} className="wrapper-color-select">
               {console.log("working")}
             <div
@@ -195,7 +213,7 @@ const Original = () => {
               onChange={(selectedOption, e) => {handleChange(selectedOption, e)}}
             />
             </div>
-        )) : updatedData.mapping.map((item, index) => (
+        )) : mappedVal.map((item, index) => (
           <div key={index} className="wrapper-color-select">
           <div
             style={{
