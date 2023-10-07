@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, {useState } from 'react'
 import Select from 'react-select';
 import "./styles.css";
 import _ from "lodash";
@@ -127,7 +127,7 @@ const Original = () => {
         label: palette.paletteName
       }));
 
-      function getValues(array1, array2) {
+      function getValuesForDropdown(array1, array2) {
       const updatedDataVal = array1.map(item => Object.values(item))
       const splicedVal = array2.map(item => Object.values(item))
       const dropdownOp = _.difference(updatedDataVal.flat(2), splicedVal.flat(2))
@@ -161,7 +161,7 @@ const Original = () => {
         if (palette.length <= 8) {
           splicedArray.splice(palette.length)
           setMappedVal(splicedArray)
-          getValues(updatedData.mapping, splicedArray)
+          getValuesForDropdown(updatedData.mapping, splicedArray)
         }else {
           setMappedVal(updatedMapping)
         }
