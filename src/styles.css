@@ -1,0 +1,40 @@
+.App {
+  font-family: sans-serif;
+  text-align: center;
+  display: flex;
+  justify-content: space-evenly;
+}
+
+.colorSwatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.attr-color-palette {
+  width:50%;
+  display: flex;
+  flex-direction: column;
+}
+
+.wrapper-color-select{
+  width:100%;
+  justify-content: space-between;
+  display: flex;
+  margin-bottom: 3vh;
+}
+
+.selectbox-legend{
+  width:30vw;
+}
+
+.continuous-values{
+  width:100%;
+  display: flex;
+  justify-content:space-evenly;
+}
+
+.continuous-values-span {
+width: 8vw;
+border: 1px solid darkgrey;
+}
