@@ -33,7 +33,7 @@
     {
       "iconColorSetBy": "ShipType",
       "dataObj":"shipData",
-      "datavariable": "ship_type_id",
+      "datavariable": "vessel_type",
       "possibleValues": [
         {"value": "70", "label": "cargo"},
         {"value": "80", "label": "tanker"},

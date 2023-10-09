@@ -5,6 +5,25 @@ import _ from "lodash";
 import data from "./colordata.json"
 
 const Original = () => {
+  const multiColorPalette = [
+    "#ffa500",
+    "#ffff00",
+    "#00ff00",
+    "#00fa9a",
+    "#0000ff",
+    "#ff00ff",
+    "#2f4f4f",
+    "#800000",
+    "#006400",
+    "#ffc0cb",
+    "#4b0082",
+    "#48d1cc",
+    "#ff0000",
+    "#f0e68c",
+    "#6495ed",
+    "#7f0000"
+  ]
+
   const bluePaletteEight = [
     "#F0F8FF",
     "#B0E0E6",
@@ -92,6 +111,7 @@ const Original = () => {
       ];
     
       const combinedPalettes = [
+        {paletteName: "MultiColor", colors: multiColorPalette},
         { paletteName: "Blue", colors: bluePalette },
         { paletteName: "Red", colors: redShadesHexCodes },
         { paletteName: "Green", colors: greenShadesHexCodes },
@@ -112,16 +132,16 @@ const Original = () => {
       ];
       const continuousValues = ["cog", "Speed", "latency", "time_dark"]
 
-    
+
       const [attributeSelected, setAttributeSelected] = useState(colorOptions[0])
       const objectIndexToUpdate = data.findIndex(obj => obj.iconColorSetBy === attributeSelected.value)
       const [updatedData, setUpdatedData] = useState(data[objectIndexToUpdate])
       const [selectedPalette, setSelectedPalette] = useState(combinedPalettes[0])
       const [continuous, setContinuous] = useState(false)
-      const [mappedVal, setMappedVal] = useState(updatedData.mapping)
+      const [mappedVal, setMappedVal] = useState(_.cloneDeep(updatedData.mapping));
       const [dropdownOp, setDropdownOP] = useState([])
       const [dropdownByAttr, setDropdownByAttr] = useState(null)
-  
+
     
       const paletteOptions = combinedPalettes.map((palette) => ({
         value: palette,
@@ -129,18 +149,17 @@ const Original = () => {
       }));
 
       function getValuesForDropdown(array1, array2) {
-      const updatedDataVal = array1.map(item => Object.values(item))
+      const updatedDataVal = typeof array1 !== "object" ? array1.map(item => Object.values(item)) : array1.map(item => item.label)
       const splicedVal = array2.map(item => Object.values(item))
       const dropdownOp = _.difference(updatedDataVal.flat(2), splicedVal.flat(2))
-      console.log(dropdownOp, "dropdownOp")
       setDropdownOP(dropdownOp)
+      console.log(dropdownOp, "dropdownOp")
       setDropdownByAttr({
         ...dropdownByAttr,
         [attributeSelected.value] : dropdownOp
       })
       }
     
-      console.log(dropdownByAttr, "dropdownByAttr")
       const handleChangeIconColor = (value) => {
         const objectIndexToUpdate = data.findIndex(obj => obj.iconColorSetBy === value.value)
         setUpdatedData(data[objectIndexToUpdate])
@@ -156,7 +175,6 @@ const Original = () => {
       }
 
       const handlePaletteChange = (selectedPalette) => {
-        console.log(selectedPalette, "selected palette")
         setSelectedPalette(selectedPalette)
         const palette = selectedPalette.colors
         const updatedMapping = updatedData.mapping.map((item, index) => {
@@ -195,8 +213,34 @@ const Original = () => {
         </div>
       );
     
-     const handleChange = (selectedOption, e) => {
-        console.log(e, "removed check")
+     const handleChange = (selectedOption, e, color) => {
+      console.log(e, selectedOption, color, "handle change")
+      // updating mapping when value is removed from select box
+      const mappedValCopy = _.cloneDeep(mappedVal);
+      if (e.action === "remove-value") {
+        const valueToRemove = e.removedValue.value;
+        mappedValCopy.forEach(item => {
+        for (const key in item) {
+          item[key] = item[key].filter(val => val !== valueToRemove);
+        }
+      });
+        setMappedVal(mappedValCopy);
+        getValuesForDropdown(updatedData.possibleValues, mappedValCopy)
+      }
+
+    // updating mapping when option is removed from select box dropdown
+
+      if (e.action === "select-option") {
+        const valueToAdd = e.option.value;
+        mappedValCopy.forEach(item => {
+        for (const key in item) {
+          if (key === color.toString()) item[key].push(valueToAdd)
+        }
+      });
+        console.log(mappedValCopy, "mappedValCopy")
+        setMappedVal(mappedValCopy);
+        getValuesForDropdown(updatedData.possibleValues, mappedValCopy)
+      }
       }
     
       return (
@@ -217,7 +261,7 @@ const Original = () => {
               }
             />
             <div>
-              {console.log(continuous, "working continuous")}
+            {console.log(continuous, "working continuous")}
             {continuous === false ? mappedVal.map((item, index) => (
             <div key={index} className="wrapper-color-select">
               {console.log("working")}
@@ -238,7 +282,7 @@ const Original = () => {
               }
               value = {Object.values(item).map(legend => legend.map(val =>({value: val, label: val})))[0]}
               isMulti
-              onChange={(selectedOption, e) => {handleChange(selectedOption, e)}}
+              onChange={(selectedOption, e) => {handleChange(selectedOption, e, Object.keys(item))}}
             />
             </div>
         )) : mappedVal.map((item, index) => (
