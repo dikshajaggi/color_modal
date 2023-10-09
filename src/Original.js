@@ -149,11 +149,11 @@ const Original = () => {
       }));
 
       function getValuesForDropdown(array1, array2) {
-      const updatedDataVal = typeof array1 !== "object" ? array1.map(item => Object.values(item)) : array1.map(item => item.label)
+      const updatedDataVal = typeof array1 === Object ? array1.map(item => Object.values(item)) : array1.map(item => item.label)
       const splicedVal = array2.map(item => Object.values(item))
       const dropdownOp = _.difference(updatedDataVal.flat(2), splicedVal.flat(2))
       setDropdownOP(dropdownOp)
-      console.log(dropdownOp, "dropdownOp")
+      console.log(dropdownOp, "dropdownOp", array1, updatedDataVal, splicedVal, typeof array1 === Object)
       setDropdownByAttr({
         ...dropdownByAttr,
         [attributeSelected.value] : dropdownOp
