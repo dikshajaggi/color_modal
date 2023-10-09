@@ -110,7 +110,7 @@ const Original = () => {
         { value: "latency", label: "Latency" },
         { value: "time_dark", label: "Time Dark" }
       ];
-      const continuousValues = ["cog", "Speed", "latency", "time_dark", "flag_code"]
+      const continuousValues = ["cog", "Speed", "latency", "time_dark"]
 
     
       const [attributeSelected, setAttributeSelected] = useState(colorOptions[0])
@@ -120,6 +120,7 @@ const Original = () => {
       const [continuous, setContinuous] = useState(false)
       const [mappedVal, setMappedVal] = useState(updatedData.mapping)
       const [dropdownOp, setDropdownOP] = useState([])
+      const [dropdownByAttr, setDropdownByAttr] = useState(null)
   
     
       const paletteOptions = combinedPalettes.map((palette) => ({
@@ -131,9 +132,15 @@ const Original = () => {
       const updatedDataVal = array1.map(item => Object.values(item))
       const splicedVal = array2.map(item => Object.values(item))
       const dropdownOp = _.difference(updatedDataVal.flat(2), splicedVal.flat(2))
+      console.log(dropdownOp, "dropdownOp")
       setDropdownOP(dropdownOp)
+      setDropdownByAttr({
+        ...dropdownByAttr,
+        [attributeSelected.value] : dropdownOp
+      })
       }
     
+      console.log(dropdownByAttr, "dropdownByAttr")
       const handleChangeIconColor = (value) => {
         const objectIndexToUpdate = data.findIndex(obj => obj.iconColorSetBy === value.value)
         setUpdatedData(data[objectIndexToUpdate])
@@ -142,6 +149,10 @@ const Original = () => {
         const result = continuousValues.filter(item => item === data[objectIndexToUpdate].iconColorSetBy)
         result.length === 0 ? setContinuous(false) : setContinuous(true)
         setAttributeSelected(value)
+        setDropdownByAttr({
+          ...dropdownByAttr,
+          [attributeSelected.value] : []
+        })
       }
 
       const handlePaletteChange = (selectedPalette) => {
@@ -164,6 +175,9 @@ const Original = () => {
           getValuesForDropdown(updatedData.mapping, splicedArray)
         }else {
           setMappedVal(updatedMapping)
+          splicedArray.splice(palette.length)
+          setMappedVal(splicedArray)
+          getValuesForDropdown(updatedData.mapping, splicedArray)
         }
       }
     
@@ -217,7 +231,7 @@ const Original = () => {
             ></div>
             <Select
             className='selectbox-legend'
-              options={dropdownOp.length !== 0 ? dropdownOp.map(legend => {
+              options={dropdownByAttr !== null ? dropdownByAttr[attributeSelected.value]?.map(legend => {
                 if (legend === null  || legend === undefined) return ""
                 return ({ value: legend, label: legend })
               }) :  []
