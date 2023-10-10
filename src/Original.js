@@ -1,8 +1,9 @@
-import React, {useState } from 'react'
+import React, {useEffect, useState } from 'react'
 import Select from 'react-select';
 import "./styles.css";
 import _, { isArray } from "lodash";
 import data from "./colordata.json"
+import countryDropdown from "./mids.json" 
 
 const Original = () => {
   const multiColorPalette = [
@@ -142,6 +143,8 @@ const Original = () => {
       const [dropdownOp, setDropdownOP] = useState([])
       const [dropdownByAttr, setDropdownByAttr] = useState(null)
       const [dropdownOpForRange, setDropdownOpForRange] = useState([])
+      const [countryPossibleVal, setCountryPossibleVal] = useState(0)
+      const [countryDropdownOp, setCountryDropdownOp] = useState([])
 
     
       const paletteOptions = combinedPalettes.map((palette) => ({
@@ -150,15 +153,10 @@ const Original = () => {
       }));
 
       function getValuesForDropdown(array1, array2, rangeDropDown, valueToRemove) {
-        console.log(array1, array2, "handle change dropdown array 1 2")
       const updatedDataVal = array1.map(item => item.label ? item.label : Object.values(item))
       const splicedVal = array2.map(item => Object.values(item))
-      console.log(updatedDataVal.flat(2),  splicedVal.flat(2), "handle change updated spliced val")
       const dropdownOp = _.difference(updatedDataVal.flat(2), splicedVal.flat(2))
-      console.log(dropdownOp, "handle change drop down")
-      console.log(dropdownOpForRange, "checking dropdown options 1")
       dropdownOpForRange.push(valueToRemove)
-      console.log(dropdownOpForRange, "checking dropdown options 1", rangeDropDown)
       rangeDropDown ? setDropdownOP(dropdownOpForRange) : setDropdownOP(dropdownOp)
       rangeDropDown ? setDropdownByAttr({
         ...dropdownByAttr,
@@ -169,13 +167,12 @@ const Original = () => {
       })
       }
 
-      console.log(dropdownByAttr, "checking dropdown options")
     
       const handleChangeIconColor = (value) => {
         const objectIndexToUpdate = data.findIndex(obj => obj.iconColorSetBy === value.value)
+        if (data[objectIndexToUpdate].iconColorSetBy === "flag_code") setCountryPossibleVal(countryPossibleVal +  1)
         setUpdatedData(data[objectIndexToUpdate])
         setMappedVal(data[objectIndexToUpdate].mapping)
-        data[objectIndexToUpdate].mapping.map(item => Object.values(item).map(legend => console.log(legend, "speed values")))
         const result = continuousValues.filter(item => item === data[objectIndexToUpdate].iconColorSetBy)
         result.length === 0 ? setContinuous(false) : setContinuous(true)
         setAttributeSelected(value)
@@ -229,6 +226,8 @@ const Original = () => {
       let array = true
       let rangeDropDown = false
       console.log(e, selectedOption, color, "handle change")
+
+
       // updating mapping when value is removed from select box
       const mappedValCopy = _.cloneDeep(mappedVal);
       const mappedValCopyForRange = _.cloneDeep(mappedVal)
@@ -243,6 +242,8 @@ const Original = () => {
           item[key] = Array.isArray(item[key])? item[key].filter(val => val !== valueToRemove) : labelToCheckRemoved === valueToRemove ? null : item[key];
         }
       });
+
+      // separate copy for range values -> speed, course, time-dark, latency
       mappedValCopyForRange.forEach(item => {
         for (const key in item) {
           const obj = item[key]
@@ -253,14 +254,12 @@ const Original = () => {
           item[key] = Array.isArray(item[key])? item[key].filter(val => val !== valueToRemove) : labelToCheckRemoved === valueToRemove ? null : labelForContinuous;
         }
       });
-      console.log(mappedValCopy, "mappedValCopy", rangeDropDown)
         setMappedVal(mappedValCopy);
-        console.log(mappedValCopyForRange, "mappedValCopyForRange", array)
         array ? getValuesForDropdown(updatedData.possibleValues, mappedValCopy, rangeDropDown, valueToRemove): getValuesForDropdown(updatedData.possibleValues, mappedValCopyForRange, rangeDropDown, valueToRemove)
       }
 
-    // updating mapping when option is removed from select box dropdown
 
+    // updating mapping when option is removed from select box dropdown
       if (e.action === "select-option") {
         const valueToAdd = e.option.value;
         mappedValCopy.forEach(item => {
@@ -273,6 +272,24 @@ const Original = () => {
         getValuesForDropdown(updatedData.possibleValues, mappedValCopy)
       }
       }
+
+      
+      // GETTING DROPDOWN OPTIONS FOR COUNTRY FROM MIDS.JSON
+      useEffect(()=> {
+        console.log(updatedData, "updatedData")
+        Object.entries(countryDropdown).map(item => countryDropdownOp.push(item[1][3]))
+
+        // Object.values(countryDropdown).map(item => console.log(item[3], "country label"))
+        if(updatedData.iconColorSetBy === "flag_code")  {
+          console.log("countryDropdownOp")
+          setDropdownByAttr({
+          ...dropdownByAttr,
+          [attributeSelected.value] : [...new Set(countryDropdownOp)]
+        })
+      }
+      }, [countryPossibleVal])
+
+      console.log(countryDropdownOp, dropdownByAttr ,"countryDropdownOp")
     
       return (
         <div className="App">
