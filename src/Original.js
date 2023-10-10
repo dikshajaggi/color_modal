@@ -166,7 +166,7 @@ const Original = () => {
         [attributeSelected.value] : dropdownOpForRange
       }) : setDropdownByAttr({
         ...dropdownByAttr,
-        [attributeSelected.value] : dropdownOp
+        [attributeSelected.value] : [...new Set(dropdownOp)]
       })
       }
 
