@@ -153,6 +153,9 @@ const Original = () => {
       }));
 
       function getValuesForDropdown(array1, array2, rangeDropDown, valueToRemove) {
+        // converting countryDropdown(mids.json) to array of objects 
+      const result = Object.entries(countryDropdown).map(item => ({value:item[0] , label: item[1][3]}))
+      if (updatedData.iconColorSetBy === "flag_code") {array1 = result}
       const updatedDataVal = array1.map(item => item.label ? item.label : Object.values(item))
       const splicedVal = array2.map(item => Object.values(item))
       const dropdownOp = _.difference(updatedDataVal.flat(2), splicedVal.flat(2))
@@ -225,8 +228,6 @@ const Original = () => {
      const handleChange = (selectedOption, e, color) => {
       let array = true
       let rangeDropDown = false
-      console.log(e, selectedOption, color, "handle change")
-
 
       // updating mapping when value is removed from select box
       const mappedValCopy = _.cloneDeep(mappedVal);
@@ -237,7 +238,6 @@ const Original = () => {
         for (const key in item) {
           const obj = item[key] 
           const labelToCheckRemoved = Array.isArray(item[key])? null : obj === null ? null : obj.min === null ? `< ${obj.max} mins` : obj.max === null ? `> ${obj.min} mins` :`${obj.min} to ${obj.max} mins`
-          const labelForContinuous = Array.isArray(item[key])? null : obj === null ? null : obj.min === null ? `< ${obj.max}` : obj.max === null ? `> ${obj.min}` :`${obj.min} - ${obj.max}` 
           if(labelToCheckRemoved === valueToRemove) rangeDropDown =  true
           item[key] = Array.isArray(item[key])? item[key].filter(val => val !== valueToRemove) : labelToCheckRemoved === valueToRemove ? null : item[key];
         }
@@ -267,7 +267,6 @@ const Original = () => {
           if (key === color.toString()) item[key].push(valueToAdd)
         }
       });
-        console.log(mappedValCopy, "mappedValCopy")
         setMappedVal(mappedValCopy);
         getValuesForDropdown(updatedData.possibleValues, mappedValCopy)
       }
@@ -276,20 +275,17 @@ const Original = () => {
       
       // GETTING DROPDOWN OPTIONS FOR COUNTRY FROM MIDS.JSON
       useEffect(()=> {
-        console.log(updatedData, "updatedData")
         Object.entries(countryDropdown).map(item => countryDropdownOp.push(item[1][3]))
 
         // Object.values(countryDropdown).map(item => console.log(item[3], "country label"))
         if(updatedData.iconColorSetBy === "flag_code")  {
-          console.log("countryDropdownOp")
+          const mappingFlagCode = updatedData.mapping.map(item => Object.values(item)).flat(2)
           setDropdownByAttr({
           ...dropdownByAttr,
-          [attributeSelected.value] : [...new Set(countryDropdownOp)]
+          [attributeSelected.value] : [...new Set (_.difference(countryDropdownOp, mappingFlagCode))]
         })
       }
       }, [countryPossibleVal])
-
-      console.log(countryDropdownOp, dropdownByAttr ,"countryDropdownOp")
     
       return (
         <div className="App">
