@@ -1,7 +1,7 @@
 import React, {useState } from 'react'
 import Select from 'react-select';
 import "./styles.css";
-import _ from "lodash";
+import _, { isArray } from "lodash";
 import data from "./colordata.json"
 
 const Original = () => {
@@ -141,6 +141,7 @@ const Original = () => {
       const [mappedVal, setMappedVal] = useState(_.cloneDeep(updatedData.mapping));
       const [dropdownOp, setDropdownOP] = useState([])
       const [dropdownByAttr, setDropdownByAttr] = useState(null)
+      const [dropdownOpForRange, setDropdownOpForRange] = useState([])
 
     
       const paletteOptions = combinedPalettes.map((palette) => ({
@@ -148,16 +149,27 @@ const Original = () => {
         label: palette.paletteName
       }));
 
-      function getValuesForDropdown(array1, array2) {
+      function getValuesForDropdown(array1, array2, rangeDropDown, valueToRemove) {
+        console.log(array1, array2, "handle change dropdown array 1 2")
       const updatedDataVal = array1.map(item => item.label ? item.label : Object.values(item))
       const splicedVal = array2.map(item => Object.values(item))
+      console.log(updatedDataVal.flat(2),  splicedVal.flat(2), "handle change updated spliced val")
       const dropdownOp = _.difference(updatedDataVal.flat(2), splicedVal.flat(2))
-      setDropdownOP(dropdownOp)
-      setDropdownByAttr({
+      console.log(dropdownOp, "handle change drop down")
+      console.log(dropdownOpForRange, "checking dropdown options 1")
+      dropdownOpForRange.push(valueToRemove)
+      console.log(dropdownOpForRange, "checking dropdown options 1", rangeDropDown)
+      rangeDropDown ? setDropdownOP(dropdownOpForRange) : setDropdownOP(dropdownOp)
+      rangeDropDown ? setDropdownByAttr({
+        ...dropdownByAttr,
+        [attributeSelected.value] : dropdownOpForRange
+      }) : setDropdownByAttr({
         ...dropdownByAttr,
         [attributeSelected.value] : dropdownOp
       })
       }
+
+      console.log(dropdownByAttr, "checking dropdown options")
     
       const handleChangeIconColor = (value) => {
         const objectIndexToUpdate = data.findIndex(obj => obj.iconColorSetBy === value.value)
@@ -171,6 +183,7 @@ const Original = () => {
           ...dropdownByAttr,
           [attributeSelected.value] : []
         })
+        setDropdownOpForRange([])
       }
 
       const handlePaletteChange = (selectedPalette) => {
@@ -213,18 +226,37 @@ const Original = () => {
       );
     
      const handleChange = (selectedOption, e, color) => {
+      let array = true
+      let rangeDropDown = false
       console.log(e, selectedOption, color, "handle change")
       // updating mapping when value is removed from select box
       const mappedValCopy = _.cloneDeep(mappedVal);
+      const mappedValCopyForRange = _.cloneDeep(mappedVal)
       if (e.action === "remove-value") {
         const valueToRemove = e.removedValue.value;
         mappedValCopy.forEach(item => {
         for (const key in item) {
-          item[key] = item[key].filter(val => val !== valueToRemove);
+          const obj = item[key] 
+          const labelToCheckRemoved = Array.isArray(item[key])? null : obj === null ? null : obj.min === null ? `< ${obj.max} mins` : obj.max === null ? `> ${obj.min} mins` :`${obj.min} to ${obj.max} mins`
+          const labelForContinuous = Array.isArray(item[key])? null : obj === null ? null : obj.min === null ? `< ${obj.max}` : obj.max === null ? `> ${obj.min}` :`${obj.min} - ${obj.max}` 
+          if(labelToCheckRemoved === valueToRemove) rangeDropDown =  true
+          item[key] = Array.isArray(item[key])? item[key].filter(val => val !== valueToRemove) : labelToCheckRemoved === valueToRemove ? null : item[key];
         }
       });
+      mappedValCopyForRange.forEach(item => {
+        for (const key in item) {
+          const obj = item[key]
+          if(Array.isArray(item[key]) === false) array = false
+          const labelToCheckRemoved = Array.isArray(item[key])? null :obj === null ? null : obj.min === null ? `< ${obj.max} mins` : obj.max === null ? `> ${obj.min} mins` :`${obj.min} to ${obj.max} mins`
+          const labelForContinuous = Array.isArray(item[key])? null : obj === null ? null : obj.min === null ? `< ${obj.max}` : obj.max === null ? `> ${obj.min}` :`${obj.min} - ${obj.max}` 
+          if(labelToCheckRemoved === valueToRemove) rangeDropDown =  true
+          item[key] = Array.isArray(item[key])? item[key].filter(val => val !== valueToRemove) : labelToCheckRemoved === valueToRemove ? null : labelForContinuous;
+        }
+      });
+      console.log(mappedValCopy, "mappedValCopy", rangeDropDown)
         setMappedVal(mappedValCopy);
-        getValuesForDropdown(updatedData.possibleValues, mappedValCopy)
+        console.log(mappedValCopyForRange, "mappedValCopyForRange", array)
+        array ? getValuesForDropdown(updatedData.possibleValues, mappedValCopy, rangeDropDown, valueToRemove): getValuesForDropdown(updatedData.possibleValues, mappedValCopyForRange, rangeDropDown, valueToRemove)
       }
 
     // updating mapping when option is removed from select box dropdown
@@ -260,10 +292,8 @@ const Original = () => {
               }
             />
             <div>
-            {console.log(continuous, "working continuous")}
             {continuous === false ? mappedVal.map((item, index) => (
             <div key={index} className="wrapper-color-select">
-              {console.log("working")}
             <div
               style={{
                 height: "30px",
@@ -296,8 +326,17 @@ const Original = () => {
           ></div>
           {Object.values(item).map(obj => (
             <div className='continuous-values'>
-            <span className='continuous-values-span'>{obj.min === null ? "-" : obj.min}</span>
-            <span className='continuous-values-span'>{obj.max === null ? "-" :obj.max}</span>
+              <Select 
+              className='selectbox-legend'
+              isMulti
+              options={dropdownByAttr !== null ? dropdownByAttr[attributeSelected.value]?.map(legend => {
+                if (legend === null  || legend === undefined) return ""
+                return ({ value: legend, label: legend })
+              }) :  []
+              }
+              value ={obj === null ? null : obj.min === null ? {value: `< ${obj.max} mins`, label:`< ${obj.max} mins`} : obj.max === null ? {value:`> ${obj.min} mins` , label: `> ${obj.min} mins`} :{value:`${obj.min} to ${obj.max} mins`, label:`${obj.min} to ${obj.max} mins`} }
+              onChange={(selectedOption, e) => {handleChange(selectedOption, e, Object.keys(item))}}
+              />
           </div>
           ))}
           
