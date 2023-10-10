@@ -184,6 +184,9 @@ const Original = () => {
           [attributeSelected.value] : []
         })
         setDropdownOpForRange([])
+        console.log(result, "result check")
+        if (result.length !== 0) setSelectedPalette(combinedPalettes[1])
+        else setSelectedPalette(combinedPalettes[0])
       }
 
       const handlePaletteChange = (selectedPalette) => {
