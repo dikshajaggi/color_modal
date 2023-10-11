@@ -220,14 +220,14 @@
         "dataObj":"shipData",
         "datavariable": "sog",
         "possibleValues": [
-            {"value": "1", "label": "< 0"},
-            {"value": "2", "label": "0 - 1"},
-            {"value": "3", "label": "1 - 5"},
-            {"value": "4", "label":  "5 - 10"},
-            {"value": "5", "label": "10 - 15 "},
-            {"value": "6", "label": "15 - 20"},
-            {"value": "7", "label": "20 - 30"},
-            {"value": "8", "label": "> 30"}
+            {"value": "1", "label": "< 0 mins"},
+            {"value": "2", "label": "0 to 1 mins"},
+            {"value": "3", "label": "1 to 5 mins"},
+            {"value": "4", "label": "5 to 10 mins"},
+            {"value": "5", "label": "10 to 15 mins"},
+            {"value": "6", "label": "15 to 20 mins"},
+            {"value": "7", "label": "20 to 30 mins"},
+            {"value": "8", "label": "> 30 mins"}
           ],
           "mapping": [  
             {"#F0F8FF": {"min":null , "max":0 }}, 

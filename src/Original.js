@@ -257,6 +257,7 @@ const Original = () => {
           item[key] = Array.isArray(item[key])? item[key].filter(val => val !== valueToRemove) : labelToCheckRemoved === valueToRemove ? null : labelForContinuous;
         }
       });
+      console.log(mappedValCopy, "mappedValCopy")
         setMappedVal(mappedValCopy);
         array ? getValuesForDropdown(updatedData.possibleValues, mappedValCopy, rangeDropDown, valueToRemove): getValuesForDropdown(updatedData.possibleValues, mappedValCopyForRange, rangeDropDown, valueToRemove)
       }
@@ -264,13 +265,19 @@ const Original = () => {
 
     // updating mapping when option is removed from select box dropdown
       if (e.action === "select-option") {
-        const valueToAdd = e.option.value;
+        const indexForContinuousVal = updatedData.possibleValues.findIndex(val => val.label === e.option.value)
+        const result = continuousValues.filter(item => item === data[objectIndexToUpdate].iconColorSetBy).length === 0
+        const valueToAdd =  result ? e.option.value : Object.values(data[objectIndexToUpdate].mapping[indexForContinuousVal])[0]
+        console.log(valueToAdd, "valueToAdd")
         mappedValCopy.forEach(item => {
         for (const key in item) {
-          if (key === color.toString()) item[key].push(valueToAdd)
+          console.log(key, "checking key", item)
+          if (key === color.toString() && result ) item[key].push(valueToAdd)
+          else if (key === color.toString() ) item[key] = valueToAdd
         }
       });
         setMappedVal(mappedValCopy);
+        console.log(mappedValCopy, "selected mapped val")
         getValuesForDropdown(updatedData.possibleValues, mappedValCopy)
       }
       }
@@ -279,8 +286,6 @@ const Original = () => {
       // GETTING DROPDOWN OPTIONS FOR COUNTRY FROM MIDS.JSON
       useEffect(()=> {
         Object.entries(countryDropdown).map(item => countryDropdownOp.push(item[1][3]))
-
-        // Object.values(countryDropdown).map(item => console.log(item[3], "country label"))
         if(updatedData.iconColorSetBy === "flag_code")  {
           const mappingFlagCode = updatedData.mapping.map(item => Object.values(item)).flat(2)
           setDropdownByAttr({
