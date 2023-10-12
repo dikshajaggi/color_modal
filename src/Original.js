@@ -145,23 +145,27 @@ const Original = () => {
       const [dropdownOpForRange, setDropdownOpForRange] = useState([])
       const [countryPossibleVal, setCountryPossibleVal] = useState(0)
       const [countryDropdownOp, setCountryDropdownOp] = useState([])
-
+      const [rangeMapped, setRangeMapped] = useState()
     
       const paletteOptions = combinedPalettes.map((palette) => ({
         value: palette,
         label: palette.paletteName
       }));
 
-      function getValuesForDropdown(array1, array2, rangeDropDown, valueToRemove) {
+      function getValuesForDropdown(array1, array2, rangeDropDown, valueToRemove, selected) {
+      const checkingRange = continuousValues.filter(item => item === data[objectIndexToUpdate].iconColorSetBy).length === 0
+
         // converting countryDropdown(mids.json) to array of objects 
       const result = Object.entries(countryDropdown).map(item => ({value:item[0] , label: item[1][3]}))
       if (updatedData.iconColorSetBy === "flag_code") {array1 = result}
       const updatedDataVal = array1.map(item => item.label ? item.label : Object.values(item))
-      const splicedVal = array2.map(item => Object.values(item))
-      const dropdownOp = _.difference(updatedDataVal.flat(2), splicedVal.flat(2))
+      const splicedVal = checkingRange ? array2.map(item => Object.values(item)).flat(2) : array2.map(item => Object.values(item)).flat(2).filter(item => item !== null)
+      const dropdownOp = _.difference(updatedDataVal.flat(2), splicedVal)
       dropdownOpForRange.push(valueToRemove)
-      rangeDropDown ? setDropdownOP(dropdownOpForRange) : setDropdownOP(dropdownOp)
-      rangeDropDown ? setDropdownByAttr({
+      console.log(dropdownOp, "dropdownOp", dropdownOpForRange)
+
+      rangeDropDown && selected === false ? setDropdownOP(dropdownOpForRange) : setDropdownOP(dropdownOp)
+      rangeDropDown && selected === false ? setDropdownByAttr({
         ...dropdownByAttr,
         [attributeSelected.value] : dropdownOpForRange
       }) : setDropdownByAttr({
@@ -169,6 +173,8 @@ const Original = () => {
         [attributeSelected.value] : [...new Set(dropdownOp)]
       })
       }
+
+      console.log(dropdownByAttr, "checking drop down by attr")
 
     
       const handleChangeIconColor = (value) => {
@@ -184,7 +190,6 @@ const Original = () => {
           [attributeSelected.value] : []
         })
         setDropdownOpForRange([])
-        console.log(result, "result check")
         if (result.length !== 0) setSelectedPalette(combinedPalettes[1])
         else setSelectedPalette(combinedPalettes[0])
       }
@@ -231,7 +236,7 @@ const Original = () => {
      const handleChange = (selectedOption, e, color) => {
       let array = true
       let rangeDropDown = false
-
+      let selected = false
       // updating mapping when value is removed from select box
       const mappedValCopy = _.cloneDeep(mappedVal);
       const mappedValCopyForRange = _.cloneDeep(mappedVal)
@@ -252,13 +257,13 @@ const Original = () => {
           const obj = item[key]
           if(Array.isArray(item[key]) === false) array = false
           const labelToCheckRemoved = Array.isArray(item[key])? null :obj === null ? null : obj.min === null ? `< ${obj.max} mins` : obj.max === null ? `> ${obj.min} mins` :`${obj.min} to ${obj.max} mins`
-          const labelForContinuous = Array.isArray(item[key])? null : obj === null ? null : obj.min === null ? `< ${obj.max}` : obj.max === null ? `> ${obj.min}` :`${obj.min} - ${obj.max}` 
+          // const labelForContinuous = Array.isArray(item[key])? null : obj === null ? null : obj.min === null ? `< ${obj.max}` : obj.max === null ? `> ${obj.min}` :`${obj.min} - ${obj.max}` 
           if(labelToCheckRemoved === valueToRemove) rangeDropDown =  true
-          item[key] = Array.isArray(item[key])? item[key].filter(val => val !== valueToRemove) : labelToCheckRemoved === valueToRemove ? null : labelForContinuous;
+          item[key] = Array.isArray(item[key])? item[key].filter(val => val !== valueToRemove) : labelToCheckRemoved === valueToRemove ? null : labelToCheckRemoved;
         }
       });
-      console.log(mappedValCopy, "mappedValCopy")
         setMappedVal(mappedValCopy);
+        setRangeMapped(mappedValCopyForRange)
         array ? getValuesForDropdown(updatedData.possibleValues, mappedValCopy, rangeDropDown, valueToRemove): getValuesForDropdown(updatedData.possibleValues, mappedValCopyForRange, rangeDropDown, valueToRemove)
       }
 
@@ -267,6 +272,7 @@ const Original = () => {
       if (e.action === "select-option") {
         const indexForContinuousVal = updatedData.possibleValues.findIndex(val => val.label === e.option.value)
         const result = continuousValues.filter(item => item === data[objectIndexToUpdate].iconColorSetBy).length === 0
+        selected = result ? false : true
         const valueToAdd =  result ? e.option.value : Object.values(data[objectIndexToUpdate].mapping[indexForContinuousVal])[0]
         console.log(valueToAdd, "valueToAdd")
         mappedValCopy.forEach(item => {
@@ -276,9 +282,15 @@ const Original = () => {
           else if (key === color.toString() ) item[key] = valueToAdd
         }
       });
+      rangeMapped.forEach(item => {
+        for (const key in item) {
+          if(Array.isArray(item[key]) === false) array = false
+          if (key === color.toString()) item[key] = e.option.value
+        }
+      });
         setMappedVal(mappedValCopy);
-        console.log(mappedValCopy, "selected mapped val")
-        getValuesForDropdown(updatedData.possibleValues, mappedValCopy)
+        console.log(mappedValCopy, "selected mapped val", rangeMapped, updatedData.possibleValues)
+        selected ? getValuesForDropdown(updatedData.possibleValues, rangeMapped, selected) : getValuesForDropdown(updatedData.possibleValues, mappedValCopy)
       }
       }
 
