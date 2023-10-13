@@ -140,41 +140,55 @@ const Original = () => {
       const [selectedPalette, setSelectedPalette] = useState(combinedPalettes[0])
       const [continuous, setContinuous] = useState(false)
       const [mappedVal, setMappedVal] = useState(_.cloneDeep(updatedData.mapping));
+      const [possibleVal, setPossibleVal] = useState(data[objectIndexToUpdate].possibleValues);
       const [dropdownOp, setDropdownOP] = useState([])
       const [dropdownByAttr, setDropdownByAttr] = useState(null)
       const [dropdownOpForRange, setDropdownOpForRange] = useState([])
       const [countryPossibleVal, setCountryPossibleVal] = useState(0)
       const [countryDropdownOp, setCountryDropdownOp] = useState([])
-      const [rangeMapped, setRangeMapped] = useState()
     
       const paletteOptions = combinedPalettes.map((palette) => ({
         value: palette,
         label: palette.paletteName
       }));
 
-      function getValuesForDropdown(array1, array2, rangeDropDown, valueToRemove, selected) {
+      function getValuesForDropdown(array1, array2) {
+      console.log(array1, "checking array 1 array 2 for dropdown ", array2)
       const checkingRange = continuousValues.filter(item => item === data[objectIndexToUpdate].iconColorSetBy).length === 0
 
-        // converting countryDropdown(mids.json) to array of objects 
+      // converting countryDropdown(mids.json) to array of objects 
       const result = Object.entries(countryDropdown).map(item => ({value:item[0] , label: item[1][3]}))
       if (updatedData.iconColorSetBy === "flag_code") {array1 = result}
-      const updatedDataVal = array1.map(item => item.label ? item.label : Object.values(item))
-      const splicedVal = checkingRange ? array2.map(item => Object.values(item)).flat(2) : array2.map(item => Object.values(item)).flat(2).filter(item => item !== null)
-      const dropdownOp = _.difference(updatedDataVal.flat(2), splicedVal)
-      dropdownOpForRange.push(valueToRemove)
-      console.log(dropdownOp, "dropdownOp", dropdownOpForRange)
 
-      rangeDropDown && selected === false ? setDropdownOP(dropdownOpForRange) : setDropdownOP(dropdownOp)
-      rangeDropDown && selected === false ? setDropdownByAttr({
-        ...dropdownByAttr,
-        [attributeSelected.value] : dropdownOpForRange
-      }) : setDropdownByAttr({
+      // dropdown options for ship type, vessel class, source, navigation_status, country
+      const updatedDataVal = array1.map(item => item.label)
+      const splicedVal = array2.map(item => Object.values(item)).flat(2)
+      const dropdownOp = _.difference(updatedDataVal.flat(2), splicedVal)
+
+
+      // getting dropdown op for range values (cog, sog, time-dark, latency)
+      const updatedDatValRange = checkingRange ? null : array1.map(item => item.value)
+      const splicedValRange = checkingRange ? null : array2.map(item => {
+        const data = Object.values(item)
+        return data[0]?.value
+      })
+      const dropdownRangeVal = checkingRange ? null : _.difference(updatedDatValRange, splicedValRange.filter(val => val !== undefined))
+      const dropdownRangeLabel = []
+      if(checkingRange === false) array1.filter(item => {
+        if (dropdownRangeVal.includes(item.value)) dropdownRangeLabel.push(item.label)
+      })
+      setDropdownOpForRange(dropdownRangeLabel)
+
+      // setting values of dropdown 
+      checkingRange ? setDropdownOP(dropdownOp) : setDropdownOP(dropdownRangeLabel)
+      checkingRange ? setDropdownByAttr({
         ...dropdownByAttr,
         [attributeSelected.value] : [...new Set(dropdownOp)]
-      })
-      }
-
-      console.log(dropdownByAttr, "checking drop down by attr")
+      }) :  setDropdownByAttr({
+          ...dropdownByAttr,
+          [attributeSelected.value] : dropdownRangeLabel
+        })
+    }
 
     
       const handleChangeIconColor = (value) => {
@@ -182,6 +196,7 @@ const Original = () => {
         if (data[objectIndexToUpdate].iconColorSetBy === "flag_code") setCountryPossibleVal(countryPossibleVal +  1)
         setUpdatedData(data[objectIndexToUpdate])
         setMappedVal(data[objectIndexToUpdate].mapping)
+        setPossibleVal(data[objectIndexToUpdate].possibleValues)
         const result = continuousValues.filter(item => item === data[objectIndexToUpdate].iconColorSetBy)
         result.length === 0 ? setContinuous(false) : setContinuous(true)
         setAttributeSelected(value)
@@ -193,6 +208,7 @@ const Original = () => {
         if (result.length !== 0) setSelectedPalette(combinedPalettes[1])
         else setSelectedPalette(combinedPalettes[0])
       }
+
 
       const handlePaletteChange = (selectedPalette) => {
         setSelectedPalette(selectedPalette)
@@ -210,12 +226,14 @@ const Original = () => {
         if (palette.length <= 8) {
           splicedArray.splice(palette.length)
           setMappedVal(splicedArray)
-          getValuesForDropdown(updatedData.mapping, splicedArray)
+          getValuesForDropdown(updatedData.possibleValues, splicedArray)
         }else {
+          console.log(updatedMapping, "handle palette change",splicedArray, updatedData.mapping)
+
           setMappedVal(updatedMapping)
           splicedArray.splice(palette.length)
           setMappedVal(splicedArray)
-          getValuesForDropdown(updatedData.mapping, splicedArray)
+          getValuesForDropdown(updatedData.possibleValues, splicedArray)
         }
       }
     
@@ -233,64 +251,37 @@ const Original = () => {
         </div>
       );
     
-     const handleChange = (selectedOption, e, color) => {
-      let array = true
-      let rangeDropDown = false
-      let selected = false
-      // updating mapping when value is removed from select box
+     const handleChange = (e, color) => {
       const mappedValCopy = _.cloneDeep(mappedVal);
-      const mappedValCopyForRange = _.cloneDeep(mappedVal)
+
+      // updating mapping when value is removed from select box
       if (e.action === "remove-value") {
         const valueToRemove = e.removedValue.value;
-        mappedValCopy.forEach(item => {
+        mappedValCopy.forEach((item, index) => {
         for (const key in item) {
           const obj = item[key] 
-          const labelToCheckRemoved = Array.isArray(item[key])? null : obj === null ? null : obj.min === null ? `< ${obj.max} mins` : obj.max === null ? `> ${obj.min} mins` :`${obj.min} to ${obj.max} mins`
-          if(labelToCheckRemoved === valueToRemove) rangeDropDown =  true
+          const labelToCheckRemoved = Array.isArray(item[key])? null : obj === null ? null : obj.value === possibleVal[index]?.value ? possibleVal[index].label : null
           item[key] = Array.isArray(item[key])? item[key].filter(val => val !== valueToRemove) : labelToCheckRemoved === valueToRemove ? null : item[key];
         }
       });
-
-      // separate copy for range values -> speed, course, time-dark, latency
-      mappedValCopyForRange.forEach(item => {
-        for (const key in item) {
-          const obj = item[key]
-          if(Array.isArray(item[key]) === false) array = false
-          const labelToCheckRemoved = Array.isArray(item[key])? null :obj === null ? null : obj.min === null ? `< ${obj.max} mins` : obj.max === null ? `> ${obj.min} mins` :`${obj.min} to ${obj.max} mins`
-          // const labelForContinuous = Array.isArray(item[key])? null : obj === null ? null : obj.min === null ? `< ${obj.max}` : obj.max === null ? `> ${obj.min}` :`${obj.min} - ${obj.max}` 
-          if(labelToCheckRemoved === valueToRemove) rangeDropDown =  true
-          item[key] = Array.isArray(item[key])? item[key].filter(val => val !== valueToRemove) : labelToCheckRemoved === valueToRemove ? null : labelToCheckRemoved;
-        }
-      });
         setMappedVal(mappedValCopy);
-        setRangeMapped(mappedValCopyForRange)
-        array ? getValuesForDropdown(updatedData.possibleValues, mappedValCopy, rangeDropDown, valueToRemove): getValuesForDropdown(updatedData.possibleValues, mappedValCopyForRange, rangeDropDown, valueToRemove)
+        getValuesForDropdown(updatedData.possibleValues, mappedValCopy)
       }
 
 
-    // updating mapping when option is removed from select box dropdown
+      // updating mapping when option is removed from select box dropdown
       if (e.action === "select-option") {
         const indexForContinuousVal = updatedData.possibleValues.findIndex(val => val.label === e.option.value)
         const result = continuousValues.filter(item => item === data[objectIndexToUpdate].iconColorSetBy).length === 0
-        selected = result ? false : true
         const valueToAdd =  result ? e.option.value : Object.values(data[objectIndexToUpdate].mapping[indexForContinuousVal])[0]
-        console.log(valueToAdd, "valueToAdd")
         mappedValCopy.forEach(item => {
         for (const key in item) {
-          console.log(key, "checking key", item)
           if (key === color.toString() && result ) item[key].push(valueToAdd)
           else if (key === color.toString() ) item[key] = valueToAdd
         }
       });
-      rangeMapped.forEach(item => {
-        for (const key in item) {
-          if(Array.isArray(item[key]) === false) array = false
-          if (key === color.toString()) item[key] = e.option.value
-        }
-      });
         setMappedVal(mappedValCopy);
-        console.log(mappedValCopy, "selected mapped val", rangeMapped, updatedData.possibleValues)
-        selected ? getValuesForDropdown(updatedData.possibleValues, rangeMapped, selected) : getValuesForDropdown(updatedData.possibleValues, mappedValCopy)
+        getValuesForDropdown(updatedData.possibleValues, mappedValCopy)
       }
       }
 
@@ -344,7 +335,7 @@ const Original = () => {
               }
               value = {Object.values(item).map(legend => legend.map(val =>({value: val, label: val})))[0]}
               isMulti
-              onChange={(selectedOption, e) => {handleChange(selectedOption, e, Object.keys(item))}}
+              onChange={(selectedOption, e) => {handleChange(e, Object.keys(item))}}
             />
             </div>
         )) : mappedVal.map((item, index) => (
@@ -359,6 +350,9 @@ const Original = () => {
           ></div>
           {Object.values(item).map(obj => (
             <div className='continuous-values'>
+               {possibleVal.map(item => {
+                if(item.value === obj?.value) console.log(item.label, obj?.value, "checking values")
+              })}
               <Select 
               className='selectbox-legend'
               isMulti
@@ -367,8 +361,10 @@ const Original = () => {
                 return ({ value: legend, label: legend })
               }) :  []
               }
-              value ={obj === null ? null : obj.min === null ? {value: `< ${obj.max} mins`, label:`< ${obj.max} mins`} : obj.max === null ? {value:`> ${obj.min} mins` , label: `> ${obj.min} mins`} :{value:`${obj.min} to ${obj.max} mins`, label:`${obj.min} to ${obj.max} mins`} }
-              onChange={(selectedOption, e) => {handleChange(selectedOption, e, Object.keys(item))}}
+              value ={obj === null ? null : possibleVal.map(item => {
+                if(item.value === obj?.value) return ({ value: item.label, label: item.label })
+              })}
+              onChange={(selectedOption, e) => {handleChange(e, Object.keys(item))}}
               />
           </div>
           ))}
