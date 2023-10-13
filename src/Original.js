@@ -140,13 +140,14 @@ const Original = () => {
       const [selectedPalette, setSelectedPalette] = useState(combinedPalettes[0])
       const [continuous, setContinuous] = useState(false)
       const [mappedVal, setMappedVal] = useState(_.cloneDeep(updatedData.mapping));
+      const selectedValRange = _.cloneDeep(updatedData.mapping)
       const [possibleVal, setPossibleVal] = useState(data[objectIndexToUpdate].possibleValues);
       const [dropdownOp, setDropdownOP] = useState([])
       const [dropdownByAttr, setDropdownByAttr] = useState(null)
       const [dropdownOpForRange, setDropdownOpForRange] = useState([])
       const [countryPossibleVal, setCountryPossibleVal] = useState(0)
       const [countryDropdownOp, setCountryDropdownOp] = useState([])
-    
+
       const paletteOptions = combinedPalettes.map((palette) => ({
         value: palette,
         label: palette.paletteName
@@ -268,7 +269,6 @@ const Original = () => {
         getValuesForDropdown(updatedData.possibleValues, mappedValCopy)
       }
 
-
       // updating mapping when option is removed from select box dropdown
       if (e.action === "select-option") {
         const indexForContinuousVal = updatedData.possibleValues.findIndex(val => val.label === e.option.value)
@@ -277,7 +277,10 @@ const Original = () => {
         mappedValCopy.forEach(item => {
         for (const key in item) {
           if (key === color.toString() && result ) item[key].push(valueToAdd)
-          else if (key === color.toString() ) item[key] = valueToAdd
+          else if (key === color.toString() ) {
+          console.log(valueToAdd, "valueToAdd", e)
+            item[key] = valueToAdd
+          }
         }
       });
         setMappedVal(mappedValCopy);
@@ -297,6 +300,10 @@ const Original = () => {
         })
       }
       }, [countryPossibleVal])
+
+      const applyChanges = () => {
+        updatedData.mapping = mappedVal 
+      }
     
       return (
         <div className="App">
@@ -372,6 +379,10 @@ const Original = () => {
           </div>
       )) }
         </div>
+          </div>
+          <div className='btn-wrapper'>
+            <button onClick={applyChanges}>Apply</button>
+            <button>Save</button>
           </div>
         </div>
       );
