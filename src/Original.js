@@ -4,6 +4,7 @@ import "./styles.css";
 import _, { isArray } from "lodash";
 import data from "./colordata.json"
 import countryDropdown from "./mids.json" 
+import dataFromApi from "./color.json"
 
 const Original = () => {
   const multiColorPalette = [
@@ -252,6 +253,50 @@ const Original = () => {
           </div>
         </div>
       );
+
+      function findValueByLabel(labelToFind) {
+        for (const item of data[objectIndexToUpdate].possibleValues) {
+          if (item.label === labelToFind) {
+            return item.value;
+          }
+        }
+        return null;
+      }
+
+      function findObjectWithMatchingValue(value, obj) {
+        console.log(obj, "checking266")
+        // for (const item of data[objectIndexToUpdate].mapping) {
+        //   console.log(item, "checking item")
+        //   const obj = Object.values(item)
+        //   for (const i  in obj) {
+        //     console.log(obj, obj[i].value, "checking ob")
+        //     if (obj[i].value === value) {
+        //       return obj[i].value;
+        //     }
+        //   }
+        // }
+        // return null;
+        if (obj !== null){
+          if (obj.value === value) return value
+        }
+        return null
+      }
+
+      function findObjectWithMatchingValueSelected (value) {
+        for (const item of dataFromApi[objectIndexToUpdate].mapping) {
+          console.log(item, "checking item")
+          const obj = Object.values(item)
+          for (const i  in obj) {
+            console.log(obj, "checking ob")
+            if (obj[i].value === value) {
+              console.log(obj, obj[i].value, "checking ob")
+              return obj[i];
+            }
+          }
+        }
+        return null;
+      }
+      
     
      const handleChange = (e, color) => {
       const mappedValCopy = _.cloneDeep(mappedVal);
@@ -259,30 +304,36 @@ const Original = () => {
       // updating mapping when value is removed from select box
       if (e.action === "remove-value") {
         const valueToRemove = e.removedValue.value;
+        const value = findValueByLabel(valueToRemove)
         mappedValCopy.forEach((item, index) => {
         for (const key in item) {
-          const obj = item[key] 
-          const labelToCheckRemoved = Array.isArray(item[key])? null : obj === null ? null : obj.value === possibleVal[index]?.value ? possibleVal[index].label : null
-          console.log(obj, labelToCheckRemoved === valueToRemove, labelToCheckRemoved, valueToRemove, possibleVal[index]?.value, "checking value to remove")
+          console.log(item[key], "checking 285", value)
+          // const labelToCheckRemoved = Array.isArray(item[key])? null : obj === null ? null : obj.value === possibleVal[index]?.value ? possibleVal[index].label : null
+          // console.log(obj, labelToCheckRemoved === valueToRemove, labelToCheckRemoved, valueToRemove, possibleVal[index]?.value, "checking value to remove")
 
-          item[key] = Array.isArray(item[key])? item[key].filter(val => val !== valueToRemove) : labelToCheckRemoved === valueToRemove ? null : item[key];
+          item[key] = Array.isArray(item[key])? item[key].filter(val => val !== valueToRemove) : value === findObjectWithMatchingValue(value, item[key]) ? null : item[key] ;
         }
       });
+      console.log(mappedValCopy, "mappedValCopy")
         setMappedVal(mappedValCopy);
         getValuesForDropdown(updatedData.possibleValues, mappedValCopy)
       }
 
       // updating mapping when option is removed from select box dropdown
       if (e.action === "select-option") {
-        const indexForContinuousVal = updatedData.possibleValues.findIndex(val => val.label === e.option.value)
+        const value = findValueByLabel(e.option.value)
+        console.log("checking func", value)
+        // const indexForContinuousVal = data[objectIndexToUpdate].possibleValues.findIndex(val => val.label === e.option.value)
         const result = continuousValues.filter(item => item === data[objectIndexToUpdate].iconColorSetBy).length === 0
-        const valueToAdd =  result ? e.option.value : Object.values(data[objectIndexToUpdate].mapping[indexForContinuousVal])[0]
+        // Object.values(data[objectIndexToUpdate].mapping[indexForContinuousVal])[0]
+        const valueSelected = findValueByLabel(e.option.value)
+        
         mappedValCopy.forEach(item => {
         for (const key in item) {
-          if (key === color.toString() && result ) item[key].push(valueToAdd)
+          if (key === color.toString() && result ) item[key].push(e.option.value)
           else if (key === color.toString() ) {
-          console.log(valueToAdd, "valueToAdd", e)
-            item[key] = valueToAdd
+          console.log(findObjectWithMatchingValueSelected(valueSelected), valueSelected, item[key], key, item, "findObjectWithMatchingValue(value, item[key], true)")
+            item[key] = findObjectWithMatchingValueSelected(valueSelected)
           }
         }
       });
@@ -305,7 +356,7 @@ const Original = () => {
       }, [countryPossibleVal])
 
       const applyChanges = () => {
-        data[objectIndexToUpdate].mapping = mappedVal
+        // data[objectIndexToUpdate].mapping = mappedVal
         updatedData.mapping = mappedVal 
       }
     
