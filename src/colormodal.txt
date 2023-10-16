@@ -1,11 +1,34 @@
 import React, {useEffect, useState } from 'react'
-import Select from 'react-select';
-import "./styles.css";
-import _, { isArray } from "lodash";
-import data from "./colordata.json"
-import countryDropdown from "./mids.json" 
+import Select from 'react-select'
+import "./styles.modules.scss"
+import _, { isArray } from "lodash"
+import data from "../../views/processShipDataHOC/updateColorData.json"
+import countryDropdown from "../../shared/API/mids.json" 
+import { Box, Modal } from '@material-ui/core'
+import WithShipContext from "../../utility/context/shipContext/shipContextHoc"
+import axios from "axios"
 
-const Original = () => {
+
+const ColorModal = (props) => {
+  const style = {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    width: 550,
+    height: 400,
+    bgcolor: "whitesmoke", // Gradient background with gray colors
+    boxShadow: 24,
+    p: 4,
+    borderRadius: 8, // Add rounded corners
+    outline: "none", // Remove outline on focus
+    textAlign: "center", // Center the content horizontally
+    display: "flex",
+    justifyContent: "space-between",
+    alignItem: "center",
+    flexDirection: "column"
+  }
+
   const multiColorPalette = [
     "#ffa500",
     "#ffff00",
@@ -34,7 +57,7 @@ const Original = () => {
     "#89CFF0",
     "#6495ED",
     "#0000CD"
-  ];
+  ]
     const bluePalette = [
         "#F0F8FF",
         "#B0E0E6",
@@ -52,7 +75,7 @@ const Original = () => {
         "#000066",
         "#4B0082",
         "#000033"
-      ];
+      ]
     
       const redShadesHexCodes = [
         "#FFA07A",
@@ -71,7 +94,7 @@ const Original = () => {
         "#990000",
         "#C04000",
         "#660000"
-      ];
+      ]
     
       const greenShadesHexCodes = [
         "#B0E57C",
@@ -90,7 +113,7 @@ const Original = () => {
         "#00231B",
         "#001612",
         "#000C09"
-      ];
+      ]
     
       const yellowPalette = [
         "#FFFFE0",
@@ -109,7 +132,7 @@ const Original = () => {
         "#B8860B",
         "#FFDB58",
         "#FFD700"
-      ];
+      ]
     
       const combinedPalettes = [
         {paletteName: "MultiColor", colors: multiColorPalette},
@@ -118,7 +141,7 @@ const Original = () => {
         { paletteName: "Green", colors: greenShadesHexCodes },
         { paletteName: "Yellow", colors: yellowPalette },
         { paletteName: "BlueEight", colors: bluePaletteEight }
-      ];
+      ]
     
       const colorOptions = [
         { value: "ShipType", label: "Ship Type" },
@@ -130,44 +153,44 @@ const Original = () => {
         { value: "navigation_status", label: "Navigation Status" },
         { value: "latency", label: "Latency" },
         { value: "time_dark", label: "Time Dark" }
-      ];
+      ]
       const continuousValues = ["cog", "Speed", "latency", "time_dark"]
 
+      console.log(props.context.dataFromApi, "props.context.dataFromApi")
 
       const [attributeSelected, setAttributeSelected] = useState(colorOptions[0])
       const objectIndexToUpdate = data.findIndex(obj => obj.iconColorSetBy === attributeSelected.value)
-      const [updatedData, setUpdatedData] = useState(data[objectIndexToUpdate])
+      const [updatedData, setUpdatedData] = useState(props.context.dataFromApi[objectIndexToUpdate])
       const [selectedPalette, setSelectedPalette] = useState(combinedPalettes[0])
       const [continuous, setContinuous] = useState(false)
-      const [mappedVal, setMappedVal] = useState(_.cloneDeep(updatedData.mapping));
-      const selectedValRange = _.cloneDeep(updatedData.mapping)
-      const [possibleVal, setPossibleVal] = useState(data[objectIndexToUpdate].possibleValues);
+      const [mappedVal, setMappedVal] = useState(_.cloneDeep(updatedData?.mapping))
+      const selectedValRange = _.cloneDeep(updatedData?.mapping)
+      const [possibleVal, setPossibleVal] = useState(data[objectIndexToUpdate].possibleValues)
       const [dropdownOp, setDropdownOP] = useState([])
       const [dropdownByAttr, setDropdownByAttr] = useState(null)
       const [dropdownOpForRange, setDropdownOpForRange] = useState([])
       const [countryPossibleVal, setCountryPossibleVal] = useState(0)
       const [countryDropdownOp, setCountryDropdownOp] = useState([])
-
-
+    
       const paletteOptions = combinedPalettes.map((palette) => ({
         value: palette,
         label: palette.paletteName
-      }));
+      }))
 
       function getValuesForDropdown(array1, array2) {
       console.log(array1, "checking array 1 array 2 for dropdown ", array2)
       const checkingRange = continuousValues.filter(item => item === data[objectIndexToUpdate].iconColorSetBy).length === 0
 
       // converting countryDropdown(mids.json) to array of objects 
-      const result = Object.entries(countryDropdown).map(item => ({value:item[0] , label: item[1][3]}))
-      if (updatedData.iconColorSetBy === "flag_code") {array1 = result}
+      const result = Object.entries(countryDropdown).map(item => ({value:item[0], label: item[1][3]}))
+      if (updatedData.iconColorSetBy === "flag_code") { array1 = result }
 
       // dropdown options for ship type, vessel class, source, navigation_status, country
       const updatedDataVal = array1.map(item => item.label)
       const splicedVal = array2.map(item => Object.values(item)).flat(2)
       const dropdownOp = _.difference(updatedDataVal.flat(2), splicedVal)
 
-
+        console.log(dropdownOp, "dropdownOp")
       // getting dropdown op for range values (cog, sog, time-dark, latency)
       const updatedDatValRange = checkingRange ? null : array1.map(item => item.value)
       const splicedValRange = checkingRange ? null : array2.map(item => {
@@ -176,7 +199,7 @@ const Original = () => {
       })
       const dropdownRangeVal = checkingRange ? null : _.difference(updatedDatValRange, splicedValRange.filter(val => val !== undefined))
       const dropdownRangeLabel = []
-      if(checkingRange === false) array1.filter(item => {
+      if (checkingRange === false) array1.filter(item => {
         if (dropdownRangeVal.includes(item.value)) dropdownRangeLabel.push(item.label)
       })
       setDropdownOpForRange(dropdownRangeLabel)
@@ -196,17 +219,17 @@ const Original = () => {
       const handleChangeIconColor = (value) => {
         const objectIndexToUpdate = data.findIndex(obj => obj.iconColorSetBy === value.value)
         if (data[objectIndexToUpdate].iconColorSetBy === "flag_code") setCountryPossibleVal(countryPossibleVal +  1)
-        setUpdatedData(data[objectIndexToUpdate])
-        setMappedVal(data[objectIndexToUpdate].mapping)
+        setUpdatedData(props.context.dataFromApi[objectIndexToUpdate])
+        setMappedVal(props.context.dataFromApi[objectIndexToUpdate].mapping)
         setPossibleVal(data[objectIndexToUpdate].possibleValues)
         const result = continuousValues.filter(item => item === data[objectIndexToUpdate].iconColorSetBy)
         result.length === 0 ? setContinuous(false) : setContinuous(true)
         setAttributeSelected(value)
-        setDropdownByAttr({
-          ...dropdownByAttr,
-          [attributeSelected.value] : []
-        })
-        setDropdownOpForRange([])
+        // setDropdownByAttr({
+        //   ...dropdownByAttr,
+        //   [attributeSelected.value] : []
+        // })
+        // setDropdownOpForRange([])
         if (result.length !== 0) setSelectedPalette(combinedPalettes[1])
         else setSelectedPalette(combinedPalettes[0])
       }
@@ -220,7 +243,7 @@ const Original = () => {
           const newKey = palette[index]
       
           const newItem = {
-            [newKey]: item[keys[0]],
+            [newKey]: item[keys[0]]
           }
           return newItem
         })
@@ -229,8 +252,8 @@ const Original = () => {
           splicedArray.splice(palette.length)
           setMappedVal(splicedArray)
           getValuesForDropdown(updatedData.possibleValues, splicedArray)
-        }else {
-          console.log(updatedMapping, "handle palette change",splicedArray, updatedData.mapping)
+        } else {
+          console.log(updatedMapping, "handle palette change", splicedArray, updatedData.mapping)
 
           setMappedVal(updatedMapping)
           splicedArray.splice(palette.length)
@@ -251,24 +274,47 @@ const Original = () => {
             ))}
           </div>
         </div>
-      );
+      )
+
+  function getValueAndLabelFromMappingByLabel(label, possibleValues, mapping) {
+    console.log(possibleValues, mapping, "cheking possible val")
+  const matchingValue = possibleValues.find((item) => item.label === label)
+    console.log(matchingValue, "matchingValue")
+  if (matchingValue) {
+    const matchingMapping = mapping.find(
+      (item) => Object.values(item)[0].value
+    )
+      console.log(matchingMapping, "matchingMapping")
+    if (matchingMapping) {
+      return matchingValue.value
+    }
+  }
+
+  return null
+}
     
-     const handleChange = (e, color) => {
-      const mappedValCopy = _.cloneDeep(mappedVal);
+  const handleChange = (e, color) => {
+      const mappedValCopy = _.cloneDeep(mappedVal)
 
       // updating mapping when value is removed from select box
       if (e.action === "remove-value") {
-        const valueToRemove = e.removedValue.value;
+        const valueToRemove = e.removedValue.value
+        console.log(mappedValCopy, "mappedValCopy")
         mappedValCopy.forEach((item, index) => {
         for (const key in item) {
           const obj = item[key] 
-          const labelToCheckRemoved = Array.isArray(item[key])? null : obj === null ? null : obj.value === possibleVal[index]?.value ? possibleVal[index].label : null
-          console.log(obj, labelToCheckRemoved === valueToRemove, labelToCheckRemoved, valueToRemove, possibleVal[index]?.value, "checking value to remove")
+        
+          const labelToCheckRemoved = Array.isArray(item[key]) ? null : obj === null ? null : obj.value === getValueAndLabelFromMappingByLabel(
+            valueToRemove,
+            data[objectIndexToUpdate].possibleValues,
+            data[objectIndexToUpdate].mapping
+          ) ? possibleVal[index].label : null
+          item[key] = Array.isArray(item[key]) ? item[key].filter(val => val !== valueToRemove) : labelToCheckRemoved === valueToRemove ? null : item[key]
+          console.log(item[key], obj, labelToCheckRemoved === valueToRemove, labelToCheckRemoved, valueToRemove, possibleVal[index]?.value, "checking value to remove")
 
-          item[key] = Array.isArray(item[key])? item[key].filter(val => val !== valueToRemove) : labelToCheckRemoved === valueToRemove ? null : item[key];
         }
-      });
-        setMappedVal(mappedValCopy);
+      })
+        setMappedVal(mappedValCopy)
         getValuesForDropdown(updatedData.possibleValues, mappedValCopy)
       }
 
@@ -279,37 +325,65 @@ const Original = () => {
         const valueToAdd =  result ? e.option.value : Object.values(data[objectIndexToUpdate].mapping[indexForContinuousVal])[0]
         mappedValCopy.forEach(item => {
         for (const key in item) {
-          if (key === color.toString() && result ) item[key].push(valueToAdd)
-          else if (key === color.toString() ) {
+          if (key === color.toString() && result) item[key].push(valueToAdd)
+          else if (key === color.toString()) {
           console.log(valueToAdd, "valueToAdd", e)
             item[key] = valueToAdd
           }
         }
-      });
-        setMappedVal(mappedValCopy);
+      })
+        setMappedVal(mappedValCopy)
         getValuesForDropdown(updatedData.possibleValues, mappedValCopy)
       }
       }
 
+      console.log(mappedVal, "checking mapped values")
+
       
       // GETTING DROPDOWN OPTIONS FOR COUNTRY FROM MIDS.JSON
-      useEffect(()=> {
+      useEffect(() => {
+        getValuesForDropdown(updatedData.possibleValues, mappedVal)
+      }, [])
+
+      useEffect(() => {
+      getValuesForDropdown(updatedData.possibleValues, mappedVal)
+      }, [attributeSelected])
+
+      useEffect(() => {
         Object.entries(countryDropdown).map(item => countryDropdownOp.push(item[1][3]))
-        if(updatedData.iconColorSetBy === "flag_code")  {
+        if (updatedData?.iconColorSetBy === "flag_code")  {
           const mappingFlagCode = updatedData.mapping.map(item => Object.values(item)).flat(2)
           setDropdownByAttr({
           ...dropdownByAttr,
-          [attributeSelected.value] : [...new Set (_.difference(countryDropdownOp, mappingFlagCode))]
+          [attributeSelected.value] : [...new Set(_.difference(countryDropdownOp, mappingFlagCode))]
         })
       }
       }, [countryPossibleVal])
 
       const applyChanges = () => {
-        data[objectIndexToUpdate].mapping = mappedVal
         updatedData.mapping = mappedVal 
+      }
+
+      const saveChanges = () => {
+        applyChanges()
+        const saveApi = "https://api.api-test.deepdarshak.live:2011/api/save_color_attributes"
+        axios.post(saveApi, updatedData)
+      }
+
+      const handleClose2 = () => {
+        props.context.setAppyColorChanges(false)
+        props.context.setOpenColor(false)
+        props.context.setCustomizeColor(false)
       }
     
       return (
+        <Modal
+        open={props.context.openColor}
+        onClose={handleClose2}
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
+      >
+        <Box sx={style}>
         <div className="App">
           <div className="attr-color-palette">
             <Select
@@ -322,18 +396,19 @@ const Original = () => {
               options={paletteOptions}
               formatOptionLabel={formatOptionLabel}
               value={{ value: selectedPalette, label: selectedPalette.paletteName }}
-              onChange={(selectedPalette) =>
-                handlePaletteChange(selectedPalette.value)
-              }
+              onChange={(selectedPalette) => handlePaletteChange(selectedPalette.value)}
             />
             <div>
-            {continuous === false ? mappedVal.map((item, index) => (
+            {continuous === false ? mappedVal?.map((item, index) => (
             <div key={index} className="wrapper-color-select">
+              {console.log(dropdownByAttr, "dropdownByAttr")}
             <div
               style={{
                 height: "30px",
                 width: "30px",
                 margin: "2px",
+                border: "1px solid transparent",
+                borderRadius:"50px",
                 backgroundColor: Object.keys(item)
               }}
             ></div>
@@ -344,25 +419,28 @@ const Original = () => {
                 return ({ value: legend, label: legend })
               }) :  []
               }
-              value = {Object.values(item).map(legend => legend.map(val =>({value: val, label: val})))[0]}
+              value = {Object.values(item).map(legend => legend.map(val => ({value: val, label: val})))[0]}
               isMulti
-              onChange={(selectedOption, e) => {handleChange(e, Object.keys(item))}}
+              onChange={(selectedOption, e) => { handleChange(e, Object.keys(item)) }}
             />
             </div>
         )) : mappedVal.map((item, index) => (
           <div key={index} className="wrapper-color-select">
+            {console.log(mappedVal, "mappedVal")}
           <div
             style={{
-              height: "20px",
-              width: "20px",
+              height: "30px",
+              width: "30px",
               margin: "2px",
+              borderRadius:"50px",
+              border: "1px solid transparent",
               backgroundColor: Object.keys(item)
             }}
           ></div>
           {Object.values(item).map(obj => (
             <div className='continuous-values'>
                {possibleVal.map(item => {
-                if(item.value === obj?.value) console.log(item.label, obj?.value, "checking values")
+                if (item.value === obj?.value) console.log(item.label, obj?.value, "checking values")
               })}
               <Select 
               className='selectbox-legend'
@@ -373,9 +451,9 @@ const Original = () => {
               }) :  []
               }
               value ={obj === null ? null : possibleVal.map(item => {
-                if(item.value === obj?.value) return ({ value: item.label, label: item.label })
+                if (item.value === obj?.value) return ({ value: item.label, label: item.label })
               })}
-              onChange={(selectedOption, e) => {handleChange(e, Object.keys(item))}}
+              onChange={(selectedOption, e) => { handleChange(e, Object.keys(item)) }}
               />
           </div>
           ))}
@@ -384,12 +462,14 @@ const Original = () => {
       )) }
         </div>
           </div>
-          <div className='btn-wrapper'>
-            <button onClick={applyChanges}>Apply</button>
-            <button>Save</button>
-          </div>
         </div>
-      );
+        <div className='btn-wrapper'>
+            <button onClick={applyChanges} className="btn-style">Apply</button>
+            <button onClick={saveChanges} className="btn-style">Save</button>
+          </div>
+        </Box>
+      </Modal>
+      )
 }
 
-export default Original
+export default WithShipContext(ColorModal)
